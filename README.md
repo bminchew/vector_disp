@@ -9,11 +9,13 @@ installation
 make 
 
 optionally:
+
 make [prefix=/your/directory] install
 
 usage
 -----
 Copy vector_disp.cmd to a directory and fill out the necessary blanks. Then do:
+
    $ vector_disp vector_disp.cmd 
 
 
