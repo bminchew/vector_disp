@@ -641,6 +641,14 @@
       endif      
 
       if (cnt.ge.3) then
+         !$omp parallel do &
+         !$omp default(private) &
+         !$omp shared(los,cor,unw,ccoef,r2dsp,nullos,nulu,nulc) &
+         !$omp shared(azlogic,azoff,nulaz,ehdg,nhdg) &
+         !$omp shared(east,north,up,erre,errn,erru,numout,mseout,msev) &
+         !$omp shared(vm,vmag,corout,avecor,gdopest,gdopvec,getwdp,wdop) &
+         !$omp shared(gtgout,gtgeast,gtgnorth,gtgup,gtgoff,gtgoen,gtgonu,gtgoeu) &
+         !$omp shared(errest,ocoff,ocoen,oconu,ocoeu,cols,master,numscenes,rnktol)
          do jj=1,cols(master)
             nonul = 0        
             logic = 0
@@ -748,6 +756,7 @@
                deallocate(dgmat,dvmat,dbmat,ddvec,work,dxvec,dyvec) 
             endif
          enddo
+         !$omp end parallel do
       endif 
 
       write(11,rec=ii) (east(mm),mm=1,cols(master))

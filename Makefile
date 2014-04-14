@@ -1,7 +1,7 @@
 # Makefile
 
 F90 = gfortran
-F90FLAGS = -ffixed-line-length-0 -ffree-form -O2
+F90FLAGS = -ffixed-line-length-0 -ffree-form -O2 -fopenmp
 F90LIBS = -llapack -lblas -lgfortran 
 F90INCLUDE = 
 TARGETS = ./vector_disp
