@@ -64,7 +64,7 @@
    real*8,allocatable::    dgmat(:,:),ddvec(:),dvmat(:,:),dbmat(:,:),dxvec(:),dyvec(:)
    real*8,allocatable::    ccoef(:),work(:)
    real*4                  gtg(3,3),gtgc(3,3)
-   real*8                  dgtg(3,3),gdopmat(3,3),mse,dcor,dscor,sdum,rnktol
+   real*8                  dgtg(3,3),gdopmat(3,3),mse,dcor,dscor,sdum,rnktol,radconv
    integer,allocatable::   scol(:),acol(:),bcol(:),latoff(:),lonoff(:),eline(:),sline(:)
    integer,allocatable::   elinesrt(:),logic(:)
    integer,allocatable::   losid(:),unwid(:),corid(:),azid(:)     ! file ids 
@@ -272,9 +272,9 @@
          if (ns.gt.0) unwnm(ns) = str
       case('Type of unwrapped or LOS displacement file (enter phase or disp)')
          if (trim(adjustl(str)).eq.'phase'.and.ns.le.numscenes.and.ns.gt.0) then
-            r2dsp(ns) = lambda/(4.d0*pi)*timeconv*distconv
+            r2dsp(ns) = 1.0d0 
          elseif (trim(adjustl(str)).eq.'disp'.and.ns.le.numscenes.and.ns.gt.0) then
-            r2dsp(ns) = timeconv*distconv
+            r2dsp(ns) = 4.d0*pi/lambda
          elseif (ns.gt.numscenes.or.ns.le.0) then
             continue
          else
@@ -579,7 +579,9 @@
    print*,' ';print*,' '
 
 !  Let's do it
-   dumv2 = 0.d0 
+   dumv2 = 0.d0
+   radconv = lambda/(4.d0*pi)*timeconv*distconv
+ 
    do ii=1,doline
 
       if(mod(ii,100).eq.0.or.ii.eq.doline.or.ii.eq.1) then
@@ -644,7 +646,7 @@
          !$omp parallel do &
          !$omp default(private) &
          !$omp shared(los,cor,unw,ccoef,r2dsp,nullos,nulu,nulc) &
-         !$omp shared(azlogic,azoff,nulaz,ehdg,nhdg) &
+         !$omp shared(azlogic,azoff,nulaz,ehdg,nhdg,radconv) &
          !$omp shared(east,north,up,erre,errn,erru,numout,mseout,msev) &
          !$omp shared(vm,vmag,corout,avecor,gdopest,gdopvec,getwdp,wdop) &
          !$omp shared(gtgout,gtgeast,gtgnorth,gtgup,gtgoff,gtgoen,gtgonu,gtgoeu) &
@@ -696,7 +698,7 @@
                         dgmat(kk,1)  = dble(ehdg(mm))
                         dgmat(kk,2)  = dble(nhdg(mm))
                         dgmat(kk,3)  = 0.d0
-                        ddvec(kk)    = dble(azoff(mm,jj))
+                        ddvec(kk)    = dble(azoff(mm,jj)*r2dsp(mm))
                         dscor = dscor + dble(cor(mm,jj))
                         kk = kk + 1
                      endif
@@ -710,12 +712,16 @@
 
                   call dggglm(nonul,3,nonul,dgmat,nonul,dbmat,nonul,ddvec,dxvec,dyvec,work,lwork,info)
                      ! dggglm is the LAPACK general least squares routine
-                  east(jj)  = sngl(dxvec(1))
-                  north(jj) = sngl(dxvec(2))
-                  up(jj)    = sngl(dxvec(3))
+                  east(jj)  = sngl(dxvec(1)*radconv)
+                  north(jj) = sngl(dxvec(2)*radconv)
+                  up(jj)    = sngl(dxvec(3)*radconv)
 
-                  if (corout.eq.1) avecor(jj) = sngl(dscor/dble(nonul))
-                  if (vm.eq.1) vmag(jj) = sngl(dsqrt(dxvec(1)**2+dxvec(2)**2+dxvec(3)**2))
+                  if (corout.eq.1) then
+                     avecor(jj) = sngl(dscor/dble(nonul))
+                  endif
+                  if (vm.eq.1) then
+                     vmag(jj) = sngl(radconv*dsqrt(dxvec(1)**2+dxvec(2)**2+dxvec(3)**2))
+                  endif
                   if (gtgout.eq.1.or.gdopest.eq.1.or.gtgoff.eq.1) then
                      call dinv(3,gdopmat)
                      if (gtgout.eq.1) then
@@ -728,7 +734,9 @@
                         gtgonu(jj) = sngl(gdopmat(2,3))
                         gtgoeu(jj) = sngl(gdopmat(1,3))
                      endif
-                     if (gdopest.eq.1) gdopvec(jj) = sngl(dsqrt(gdopmat(1,1) + gdopmat(2,2) + gdopmat(3,3)))
+                     if (gdopest.eq.1) then
+                        gdopvec(jj) = sngl(dsqrt(gdopmat(1,1) + gdopmat(2,2) + gdopmat(3,3)))
+                     endif
                   endif
                   if (errest.eq.1.or.ocoff.eq.1.or.getwdp.eq.1) then
                      call dinv(3,dgtg)  
@@ -742,7 +750,9 @@
                         oconu(jj) = sngl(dgtg(2,3))
                         ocoeu(jj) = sngl(dgtg(1,3))
                      endif
-                     if (getwdp.eq.1) wdop(jj) = sngl(dsqrt(dgtg(1,1) + dgtg(2,2) + dgtg(3,3)))
+                     if (getwdp.eq.1) then
+                        wdop(jj) = sngl(dsqrt(dgtg(1,1) + dgtg(2,2) + dgtg(3,3)))
+                     endif
                   endif
                   if (mseout.eq.1) then 
                         if (nonul.gt.2) then
