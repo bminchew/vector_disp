@@ -5,16 +5,16 @@
 
 
 !****************************************************************
-!**     
+!**
 !**   FILE NAME: vector_disp_bm.f
-!**     
+!**
 !**   DATE WRITTEN: September 2011
-!**     
-!**   PROGRAMMER: 
-!**                          Brent Minchew  
-!**                California Institute of Technology 
+!**
+!**   PROGRAMMER:
+!**                          Brent Minchew
+!**                California Institute of Technology
 !**                       bminchew@caltech.edu
-!**      
+!**
 !**   FUNCTIONAL DESCRIPTION: 3D vector inversion estimated using
 !**               weighted least squares from unwrapped phase or
 !**               line of sight displacement files
@@ -26,18 +26,18 @@
 !**                  frame as given in LOS file
 !**            2) [optional] error estimation for each component
 !**            3) [optional] mean square error for each pixel
-!**   
+!**
 !**   ROUTINES CALLED:  dggglm, dgetri, dgetrf
-!**     
-!**   NOTES: must be called with appropriate command file 
-!**     
+!**
+!**   NOTES: must be called with appropriate command file
+!**
 !**   UPDATE LOG:
 !**
-!**   Date Changed        Reason Changed                  
-!**   ------------       ----------------             
+!**   Date Changed        Reason Changed
+!**   ------------       ----------------
 !** Jan 8, 2013   Replaced MIGS inversion with LAPACK routines: dggglm, dgetri
-!** Jun 3, 2013   Added rank(G) >= 3 check in subroutine getrank(G,nonul,rnk)  
-!**  
+!** Jun 3, 2013   Added rank(G) >= 3 check in subroutine getrank(G,nonul,rnk)
+!**
 !*****************************************************************
 
 
@@ -45,7 +45,7 @@
 
    character*250           cmdfile,otpref,otfold,eastnm,nornm,upnm,msenm,gtgnm
    character*250           str,str2,label,dumname,vmagnm,numnm,acornm,gdopnm
-   character*1             errstr 
+   character*1             errstr
    character(len=250),dimension(500)::  unwnm,cornm,losnm,aznm
 
    integer                 ii,jj,kk,mm,zz,ierr,ios,ar,r,k,ns,iid,dumi,tp,tf,alaz
@@ -67,7 +67,7 @@
    real*8                  dgtg(3,3),gdopmat(3,3),mse,dcor,dscor,sdum,rnktol,radconv
    integer,allocatable::   scol(:),acol(:),bcol(:),latoff(:),lonoff(:),eline(:),sline(:)
    integer,allocatable::   elinesrt(:),logic(:)
-   integer,allocatable::   losid(:),unwid(:),corid(:),azid(:)     ! file ids 
+   integer,allocatable::   losid(:),unwid(:),corid(:),azid(:)     ! file ids
 
    type :: parstr
       real*4      pi,fpii,r2d
@@ -95,7 +95,7 @@
 
    rnktol      = 1.d-2
    ios         = 0
-   lne         = 1.d0    
+   lne         = 1.d0
    errest      = 0
    timeconv    = 1.d0
    distconv    = 1.d0
@@ -265,14 +265,14 @@
          read(str,*,iostat=ios) ns
       case('Samples in Unwrapped or LOS displacement (-)')
          if (ns.gt.0) then
-            read(str,*,iostat=ios) cols(ns) 
+            read(str,*,iostat=ios) cols(ns)
             scncnt = scncnt + 1
          endif
       case('Unwrapped or LOS displacement file')
          if (ns.gt.0) unwnm(ns) = str
       case('Type of unwrapped or LOS displacement file (enter phase or disp)')
          if (trim(adjustl(str)).eq.'phase'.and.ns.le.numscenes.and.ns.gt.0) then
-            r2dsp(ns) = 1.0d0 
+            r2dsp(ns) = 1.0d0
          elseif (trim(adjustl(str)).eq.'disp'.and.ns.le.numscenes.and.ns.gt.0) then
             r2dsp(ns) = 4.d0*pi/lambda
          elseif (ns.gt.numscenes.or.ns.le.0) then
@@ -290,7 +290,7 @@
          if  (trim(adjustl(str)).ne.'none'.and.trim(adjustl(str)).ne.'None' &
                & .and.trim(adjustl(str)).ne.'NONE'.and.ns.gt.0) then
             aznm(ns) = str
-            azlogic(ns) = 1   
+            azlogic(ns) = 1
             alaz = 1
          endif
       case('Peg heading (only needed if azimuth offset file is provided)')
@@ -313,8 +313,8 @@
          if(ns.le.numscenes.and.ns.gt.0) read(str,*,iostat=ios) nullos(ns)
       case('Number of looks')
          if(ns.le.numscenes.and.ns.gt.0) read(str,*,iostat=ios) nlooks(ns)
-         
-      
+
+
       case('End of command file')
          eoc = 1
 
@@ -326,7 +326,7 @@
 
    allocate(colsrt(numscenes))
    colsrt = cols
-   call qsort(colsrt,numscenes) 
+   call qsort(colsrt,numscenes)
    maxcol = colsrt(numscenes)
    deallocate(colsrt)
 !  now allocate the rest
@@ -382,8 +382,8 @@
    allocate(numout(cols(master)),stat=ierr)
             if(ierr.ne.0) print*,'allocation error in numout'
    if (mseout.eq.1) allocate(msev(cols(master)))
-   if (vm.eq.1) allocate(vmag(cols(master)))    
-   if (gdopest.eq.1) allocate(gdopvec(cols(master)))        
+   if (vm.eq.1) allocate(vmag(cols(master)))
+   if (gdopest.eq.1) allocate(gdopvec(cols(master)))
    if (corout.eq.1) allocate(avecor(cols(master)))
    if (getwdp.eq.1) allocate(wdop(cols(master)))
    if (gtgout.eq.1) then
@@ -481,10 +481,10 @@
    if (getwdp.eq.1) then
       gtgnm = otfold(1:tf)//'/'//otpref(1:tp)//'.obscov.dop'
       open(31,file=gtgnm,access=di,form=fu,status=re,recl=4*cols(master))
-   endif 
+   endif
 
 !  set up each scene
-   iid = 41     ! starting input file id 
+   iid = 41     ! starting input file id
 
    do ii=1,numscenes
 
@@ -500,7 +500,7 @@
 933      iid = iid + 1
          if (iid.ge.900.and.iid.le.940) goto 933
          if (iid.ge.100.and.iid.le.110) goto 933
-       
+
 
       dumname = trim(adjustl(unwnm(ii)))
        open(unwid(ii),file=dumname,access=di,form=fu,status='old',recl=4*cols(ii))
@@ -515,7 +515,7 @@
 934      iid = iid + 1
          if (iid.ge.900.and.iid.le.940) goto 934
          if (iid.ge.100.and.iid.le.110) goto 934
-         
+
          dumname = trim(adjustl(aznm(ii)))
          open(azid(ii),file=dumname,access=di,form=fu,status='old',recl=4*cols(ii))
          azoff(ii,:) = nulaz(ii)
@@ -523,12 +523,12 @@
          ehdg(ii) = sin(hdg(ii)*pi/180.d0)
          nhdg(ii) = cos(hdg(ii)*pi/180.d0)
       endif
-         
+
 
 !  calculate pixel offsets for each scene relative to the master
             dumi = 0
        dum1 = (latin(master) - latin(ii))/latspc(ii)
-            if (abs(dum1-int(dum1)) .ge. 0.5d0) dumi = dum1/abs(dum1)       
+            if (abs(dum1-int(dum1)) .ge. 0.5d0) dumi = dum1/abs(dum1)
        latoff(ii) = -(int(dum1) + dumi)     ! positive southward
             dumi = 0
        dum1 = (lonin(master) - lonin(ii))/lonspc(ii)
@@ -536,9 +536,9 @@
        lonoff(ii) = -(int(dum1) + dumi)     !  positive eastward
 
        eline(ii) = lines(ii) + latoff(ii)
-       sline(ii) = -latoff(ii) 
-   
-!  set column offset conditions 
+       sline(ii) = -latoff(ii)
+
+!  set column offset conditions
       if (lonoff(ii).le.0) then      ! shifted left or not at all relative to master
          bcol(ii) = 0                ! no buffer on left
          scol(ii) = -lonoff(ii) + 1  ! starting column
@@ -575,13 +575,13 @@
    print*,' '
    print*,' Total lines    = ',doline
    print*,' Total samples  = ',cols(master)
-   print*,' Total scenes   = ',numscenes 
+   print*,' Total scenes   = ',numscenes
    print*,' ';print*,' '
 
 !  Let's do it
    dumv2 = 0.d0
    radconv = lambda/(4.d0*pi)*timeconv*distconv
- 
+
    do ii=1,doline
 
       if(mod(ii,100).eq.0.or.ii.eq.doline.or.ii.eq.1) then
@@ -596,10 +596,10 @@
             read(unwid(mm),rec=ii+sline(mm)) dumv1(bcol(mm)+1:bcol(mm)+cols(mm))
                unw(mm,:) = dumv1(scol(mm):cols(master)+scol(mm)-1)
             dumv1 = nulc(mm)
-            read(corid(mm),rec=ii+sline(mm)) dumv1(bcol(mm)+1:bcol(mm)+cols(mm)) 
+            read(corid(mm),rec=ii+sline(mm)) dumv1(bcol(mm)+1:bcol(mm)+cols(mm))
                cor(mm,:) = dumv1(scol(mm):cols(master)+scol(mm)-1)
             dumv1 = nullos(mm)
-            read(losid(mm),rec=ii+sline(mm)) dumv1(3*bcol(mm)+1:3*(bcol(mm)+cols(mm))) 
+            read(losid(mm),rec=ii+sline(mm)) dumv1(3*bcol(mm)+1:3*(bcol(mm)+cols(mm)))
                los(mm,:) = dumv1(3*(scol(mm)-1)+1:3*(cols(master)+scol(mm)-1))
             if(azlogic(mm).eq.1) then
                dumv1 = nulaz(mm)
@@ -613,9 +613,9 @@
 
       east  = nulo
       north = nulo
-      up    = nulo 
+      up    = nulo
 
-      erre  = nulo      
+      erre  = nulo
       errn  = nulo
       erru  = nulo
 
@@ -635,12 +635,12 @@
          gtgoen = nulo
          gtgonu = nulo
          gtgoeu = nulo
-      endif    
+      endif
       if (ocoff.eq.1) then
          ocoen = nulo
          oconu = nulo
          ocoeu = nulo
-      endif      
+      endif
 
       if (cnt.ge.3) then
          !$omp parallel do &
@@ -652,18 +652,19 @@
          !$omp shared(gtgout,gtgeast,gtgnorth,gtgup,gtgoff,gtgoen,gtgonu,gtgoeu) &
          !$omp shared(errest,ocoff,ocoen,oconu,ocoeu,cols,master,numscenes,rnktol)
          do jj=1,cols(master)
-            nonul = 0        
+            nonul = 0
             logic = 0
 
             do mm=1,numscenes
-               dum1 = product(los(mm,(1+(jj-1)*3):(3+(jj-1)*3))-nullos)*cor(mm,jj) ! test null vals
-               if(unw(mm,jj).ne.nulu(mm).and.dum1.ne.0.d0.and.cor(mm,jj).ne.nulc(mm)) then
+               dum1 = product(los(mm,(1+(jj-1)*3):(3+(jj-1)*3))-nullos(mm))*cor(mm,jj) ! test null vals
+               if(unw(mm,jj).ne.nulu(mm).and.dum1.ne.0.d0.and.cor(mm,jj).ne.nulc(mm).and.&
+                    & unw(mm,jj).eq.unw(mm,jj).and.dum1.eq.dum1) then
                   nonul = nonul + 1
                   logic(mm) = 1
-                  if (azlogic(mm).eq.1.and.azoff(mm,jj).ne.nulaz(mm)) nonul = nonul + 1
+                  if (azlogic(mm).eq.1.and.azoff(mm,jj).ne.nulaz(mm).and.azoff(mm,jj).eq.azoff(mm,jj)) nonul = nonul + 1
                endif
             enddo
-      
+
             numout(jj) = nonul
 
             if (nonul.ge.3) then
@@ -677,7 +678,7 @@
                allocate(work(lwork))
 
                dvmat = 0.d0
-               dbmat = 0.d0 
+               dbmat = 0.d0
                dscor = 0.d0
                kk = 1
                do mm=1,numscenes
@@ -705,7 +706,7 @@
                   endif
                enddo
 
-               call getrank(dgmat,nonul,rnk,rnktol)  ! don't bother with rank < 3 
+               call getrank(dgmat,nonul,rnk,rnktol)  ! don't bother with rank < 3
                if (rnk.gt.2) then
                   dgtg = matmul(matmul(transpose(dgmat),dvmat),dgmat)
                   gdopmat = matmul(transpose(dgmat),dgmat)
@@ -739,7 +740,7 @@
                      endif
                   endif
                   if (errest.eq.1.or.ocoff.eq.1.or.getwdp.eq.1) then
-                     call dinv(3,dgtg)  
+                     call dinv(3,dgtg)
                      if (errest.eq.1) then
                         erre(jj) = sngl(dgtg(1,1))
                         errn(jj) = sngl(dgtg(2,2))
@@ -754,7 +755,7 @@
                         wdop(jj) = sngl(dsqrt(dgtg(1,1) + dgtg(2,2) + dgtg(3,3)))
                      endif
                   endif
-                  if (mseout.eq.1) then 
+                  if (mseout.eq.1) then
                         if (nonul.gt.2) then
                            mse = sum(dyvec**2)/dble(nonul)
                         else
@@ -763,11 +764,11 @@
                         msev(jj) = sngl(mse)
                   endif
                endif
-               deallocate(dgmat,dvmat,dbmat,ddvec,work,dxvec,dyvec) 
+               deallocate(dgmat,dvmat,dbmat,ddvec,work,dxvec,dyvec)
             endif
          enddo
          !$omp end parallel do
-      endif 
+      endif
 
       write(11,rec=ii) (east(mm),mm=1,cols(master))
       write(12,rec=ii) (north(mm),mm=1,cols(master))
@@ -792,7 +793,7 @@
          write(25,rec=ii) (gtgoen(mm),mm=1,cols(master))
          write(26,rec=ii) (gtgonu(mm),mm=1,cols(master))
          write(27,rec=ii) (gtgoeu(mm),mm=1,cols(master))
-      endif 
+      endif
       if (ocoff.eq.1) then
          write(28,rec=ii) (ocoen(mm),mm=1,cols(master))
          write(29,rec=ii) (oconu(mm),mm=1,cols(master))
@@ -833,14 +834,14 @@
          if (s(i).gt.st) rnk = rnk + 1
       enddo
    endif
-   end subroutine 
+   end subroutine
 
 
 !  *************************************************************************************
 !  *************************************************************************************
 
    subroutine dinv(n,mat)
-!  returns inv(mat) for a double precision nXn matrix mat 
+!  returns inv(mat) for a double precision nXn matrix mat
    implicit none
    integer     n,info,ipiv(n)
    real*8      mat(n,n), work(n*n)
@@ -855,9 +856,9 @@
    subroutine getmse(v,b,g,gtg,m,n,mse)
 !  calculates mean square error scalar mse
 !
-!  inputs:   v = inverse covariance matrix 
+!  inputs:   v = inverse covariance matrix
 !            b = data vector
-!            g = linear operator 
+!            g = linear operator
 !            gtg = inv(transpose(g)*inv(v)*g)
 !            m = number of observations
 !            n = size of model (will be 3 for 3D vector field)
@@ -883,12 +884,12 @@
    par1(1) = b(1)*big(1,1) + b(2)*big(2,1) + b(3)*big(3,1)
    par1(2) = b(1)*big(1,2) + b(2)*big(2,2) + b(3)*big(3,2)
    par1(3) = b(1)*big(1,3) + b(2)*big(2,3) + b(3)*big(3,3)
- 
+
    mse  = (par1(1)*b(1) + par1(2)*b(2) + par1(3)*b(3))/(m-n)
 
    end subroutine
-   
-      
+
+
 
 
 !  *************************************************************************************
@@ -897,7 +898,7 @@
 
       SUBROUTINE qsort(COUNT,N)
 
-!     Quicksort   
+!     Quicksort
 !C     .. Scalar Arguments ..
       INTEGER N
 !C     ..
@@ -915,7 +916,7 @@
 !C  CHECK THAT A TRIVIAL CASE HAS NOT BEEN ENTERED
       IF (N.EQ.1) GO TO 280
       IF (N.GE.1) GO TO 110
-      WRITE (6,FMT=100) 
+      WRITE (6,FMT=100)
 
 100 FORMAT (/,/,/,20X,' ***KB05A*** ','NO NUMBERS TO BE SORTED ** RETURN TO CALLING PROGRAM')
 
@@ -944,7 +945,7 @@
           IF (I.GT.IS) GO TO 120
   130   CONTINUE
         LA = LA - 2
-        GO TO 260 
+        GO TO 260
 !C             *******  QUICKSORT  ********
 !C  SELECT THE NUMBER IN THE CENTRAL POSITION IN THE SEGMENT AS
 !C  THE TEST NUMBER.REPLACE IT WITH THE NUMBER FROM THE SEGMENT'S
@@ -1033,9 +1034,3 @@
   280 RETURN
 
       END
-
-
-
-
-
-
